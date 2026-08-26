@@ -1,0 +1,101 @@
+=============================================
+  BARCODE TICKET GENERATOR
+  Instrucciones de uso
+=============================================
+
+QUE ES
+------
+Generador de tickets de inventario con codigo de barras Code128.
+Permite crear tickets personalizados, previsualizarlos en tiempo real,
+y descargarlos como imagen PNG de alta resolucion (300 DPI) o imprimirlos.
+
+
+REQUISITOS PREVIOS
+------------------
+- Python 3.8 o superior
+- pip (viene incluido con Python)
+- Navegador web moderno (Chrome, Firefox, Edge, Safari)
+
+
+INSTALACION
+-----------
+1. Abrir una terminal en la carpeta del proyecto:
+
+   cd barcode-generator
+
+2. (Opcional) Crear un entorno virtual:
+
+   python -m venv venv
+
+   Windows:
+   venv\Scripts\activate
+
+   Linux/Mac:
+   source venv/bin/activate
+
+3. Instalar las dependencias:
+
+   pip install -r requirements.txt
+
+   Esto instalara:
+   - fastapi
+   - uvicorn
+   - python-barcode
+   - Pillow
+   - jinja2
+
+
+EJECUCION
+---------
+Ejecutar el siguiente comando en la terminal:
+
+   python main.py
+
+El servidor arrancara en:
+
+   http://127.0.0.1:8005
+
+Abrir esa URL en el navegador.
+
+
+COMO USAR LA INTERFAZ
+---------------------
+
+1. CONFIGURAR EL TICKET
+   - Dimensiones: ancho y alto en milimetros (default 60x40 mm)
+   - Nombre del Producto: texto que aparece arriba del barcode
+   - Codigo de Barras: contenido del barcode (letras, numeros, simbolos)
+   - Perfil de Instagram: handle sin @
+
+2. AJUSTAR TAMAOS DE FUENTE
+   - Usa los sliders para cambiar el tamaño del nombre, Instagram
+     y texto del barcode
+
+3. REPOSICIONAR ELEMENTOS
+   - Haz hover sobre el ticket para ver las asas de arrastre
+   - Arrastra el nombre, el codigo de barras o el Instagram
+     a la posicion que prefieras
+
+4. DESCARGAR O IMPRIMIR
+   - "Descargar Ticket PNG (300 DPI)": genera un archivo
+     llamado Nombre_SKU.png
+   - "Imprimir Ticket": abre la ventana de impresion del navegador
+
+
+NOTAS
+----
+- El formato de barcode es Code128 (acepta letras, numeros y simbolos)
+- El archivo descargado usa el formato: NombreDelProducto_SKU.png
+- Los caracteres especiales en el nombre se reemplazan por guiones bajos
+- La impresion usa html2canvas para garantizar que el barcode sea
+  identical al que se ve en pantalla
+
+
+TROUBLESHOOTING
+---------------
+- Si la ventana de impresion no se abre, verifica que tu navegador
+  no este bloqueando ventanas emergentes (popups) para este sitio
+- Si el barcode no se lee al escanear, intenta aumentar las
+  dimensiones del ticket o reducir el zoom del navegador
+- Si hay errores de dependencias, ejecuta: pip install --upgrade
+  fastapi uvicorn python-barcode Pillow jinja2
