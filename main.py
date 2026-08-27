@@ -53,6 +53,11 @@ async def index(request: Request):
     return templates.TemplateResponse(request=request, name="index.html")
 
 
+@app.api_route("/health", methods=["GET", "HEAD"])
+async def health():
+    return {"status": "ok"}
+
+
 if __name__ == "__main__":
     import os
     import uvicorn
