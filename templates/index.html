@@ -8,6 +8,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -185,6 +186,14 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
                         </svg>
                         Descargar Ticket PNG (300 DPI)
+                    </button>
+
+                    <button onclick="downloadPDF()"
+                        class="btn-action w-full flex items-center justify-center gap-2 px-4 py-3 bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium rounded-xl border border-gray-200 transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                        </svg>
+                        Descargar Ticket PDF
                     </button>
                 </div>
 
@@ -498,6 +507,7 @@
 
         async function printTicket() {
             const ticket = document.getElementById('ticket-canvas');
+            const size = getTicketSize();
             const printWindow = window.open('', '_blank', 'width=800,height=600');
             if (!printWindow) {
                 alert('El navegador bloqueo la ventana emergente. Permita popups para este sitio.');
@@ -518,9 +528,12 @@
             document.querySelectorAll('.drag-handle').forEach(h => h.style.display = '');
 
             const dataUrl = canvas.toDataURL('image/png');
+            const orientation = size.widthMm > size.heightMm ? 'landscape' : 'portrait';
             printWindow.document.write(
                 '<html><head><title>Imprimir Ticket</title>' +
-                '<style>@page{margin:0;} body{margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;} img{max-width:100%;height:auto;}</style>' +
+                '<style>@page{size:' + size.widthMm + 'mm ' + size.heightMm + 'mm; margin:0;} ' +
+                'body{margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;} ' +
+                'img{max-width:100%;height:auto;}</style>' +
                 '</head><body><img src="' + dataUrl + '" onload="window.print();window.close();"/></body></html>'
             );
             printWindow.document.close();
@@ -548,10 +561,81 @@
             const barcodeContent = document.getElementById('barcode-content').value || '000000';
             const nameClean = productName.replace(/[^a-zA-Z0-9_-]/g, '_').substring(0, 40);
             const skuClean = barcodeContent.replace(/[^a-zA-Z0-9_-]/g, '_').substring(0, 30);
+            const defaultName = nameClean + '_' + skuClean + '.png';
+
+            if (window.showSaveFilePicker) {
+                try {
+                    const handle = await window.showSaveFilePicker({
+                        suggestedName: defaultName,
+                        types: [{ description: 'Imagen PNG', accept: { 'image/png': ['.png'] } }]
+                    });
+                    const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
+                    const writable = await handle.createWritable();
+                    await writable.write(blob);
+                    await writable.close();
+                    return;
+                } catch (e) {
+                    if (e.name === 'AbortError') return;
+                }
+            }
+
             const link = document.createElement('a');
-            link.download = nameClean + '_' + skuClean + '.png';
+            link.download = defaultName;
             link.href = canvas.toDataURL('image/png');
             link.click();
+        }
+
+        async function downloadPDF() {
+            const ticket = document.getElementById('ticket-canvas');
+            const size = getTicketSize();
+            const DPI_SCALE = 300 / 96;
+
+            document.querySelectorAll('.drag-handle').forEach(h => h.style.display = 'none');
+            ticket.style.border = 'none';
+
+            const canvas = await html2canvas(ticket, {
+                scale: DPI_SCALE,
+                useCORS: true,
+                backgroundColor: '#ffffff',
+                logging: false
+            });
+
+            ticket.style.border = '';
+            document.querySelectorAll('.drag-handle').forEach(h => h.style.display = '');
+
+            const orientation = size.widthMm > size.heightMm ? 'l' : 'p';
+            const doc = new jspdf.jsPDF({
+                orientation: orientation,
+                unit: 'mm',
+                format: [size.widthMm, size.heightMm]
+            });
+
+            const imgData = canvas.toDataURL('image/png');
+            doc.addImage(imgData, 'PNG', 0, 0, size.widthMm, size.heightMm);
+
+            const productName = document.getElementById('product-name').value || 'Producto';
+            const barcodeContent = document.getElementById('barcode-content').value || '000000';
+            const nameClean = productName.replace(/[^a-zA-Z0-9_-]/g, '_').substring(0, 40);
+            const skuClean = barcodeContent.replace(/[^a-zA-Z0-9_-]/g, '_').substring(0, 30);
+            const defaultName = nameClean + '_' + skuClean + '.pdf';
+
+            if (window.showSaveFilePicker) {
+                try {
+                    const handle = await window.showSaveFilePicker({
+                        suggestedName: defaultName,
+                        types: [{ description: 'Documento PDF', accept: { 'application/pdf': ['.pdf'] } }]
+                    });
+                    const blob = doc.output('blob');
+                    const writable = await handle.createWritable();
+                    await writable.write(blob);
+                    await writable.close();
+                    return;
+                } catch (e) {
+                    if (e.name === 'AbortError') return;
+                }
+            }
+
+            doc.save(defaultName);
         }
 
         document.addEventListener('DOMContentLoaded', () => {
