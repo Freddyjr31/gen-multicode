@@ -48,7 +48,7 @@ async def save_ticket(data: TicketData):
     return {"ok": True, "png": png_path, "pdf": pdf_path}
 
 
-@app.get("/", response_class=HTMLResponse)
+@app.api_route("/", methods=["GET", "HEAD"], response_class=HTMLResponse)
 async def index(request: Request):
     return templates.TemplateResponse(request=request, name="index.html")
 
